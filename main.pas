@@ -6,13 +6,14 @@ interface
 
 uses
   Windows, Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ActnList, LResources, ExtCtrls;
+  ActnList, LResources, ExtCtrls, Grids, ComCtrls, Types;
 
 type
 
   { TForm1 }
 
   TForm1 = class(TForm)
+    Bevel1: TBevel;
     ComboBox1: TComboBox;
     ComboBox2: TComboBox;
     ComboBox3: TComboBox;
@@ -26,12 +27,31 @@ type
     Edit3: TEdit;
     Edit4: TEdit;
     Image1: TImage;
+    Image2: TImage;
+    Image3: TImage;
+    Image4: TImage;
+    Image5: TImage;
+    Image6: TImage;
+    Image7: TImage;
+    ImageList1: TImageList;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
+    hintl: TLabel;
     procedure ComboBox1Change(Sender: TObject);
+    procedure ComboBox1DrawItem(Control: TWinControl; Index: Integer;
+      ARect: TRect; State: TOwnerDrawState);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure Image6MouseLeave(Sender: TObject);
+    procedure Image6MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
+      );
+    procedure Image6MouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure Image6Paint(Sender: TObject);
+    procedure Image7Paint(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+    procedure UpdateForm();
   private
     function NewElement(edit:TEdit): string;
 
@@ -53,6 +73,10 @@ var i:array[0..1, 0..3] of integer; s1, s2, s3:string;
     c: array [0..7] of TCombobox;
     d: array [0..3] of TEdit;
     s: array [0..3] of string;
+    m: array [0..3] of TImage;
+    g: array [0..49] of integer;
+   g2: array [0..49] of integer;
+   re: array [0..3] of integer;
 
 
 const
@@ -89,7 +113,7 @@ type
  end;
 
 { TForm1 }
-function Tform1.NewElement(edit:TEdit): string;
+function TForm1.NewElement(edit: TEdit): string;
 var t, r:integer;   id1,id2,col1,col2,row1,row2,id3,col3,row3, type_:integer; item1, item2, item3:string;
 begin//
      with edit do begin
@@ -147,8 +171,14 @@ begin//
                 end;
 
           item3 := ComboBox1.Items[id3];
-          text := item3;
-          s[r-1] := item3;
+          re[r-1] := id3-1;
+          text :=  '     '+item3;
+          s[r-1] :=item3;
+
+
+          m[r-1].Parent:=edit;
+          m[r-1].Canvas.Clear;
+          Imagelist1.Draw(m[r-1].Canvas, 2, 2, id3);
      end;
 end;
 
@@ -166,10 +196,19 @@ begin    //
 
         i[tag div 4, id] := ItemIndex;
         NewElement(d[id]);
+    end;
+   UpdateForm();
 end;
 
-
-
+procedure TForm1.ComboBox1DrawItem(Control: TWinControl; Index: Integer;
+  ARect: TRect; State: TOwnerDrawState);
+begin//
+     with Control as TComboBox do
+          if index > 0 then begin
+             Canvas.FillRect(Arect);
+             Imagelist1.Draw(Canvas, aRect.Left+2, aRect.Top+2, Index );
+             Canvas.TextOut(ARect.Left+30, ARect.Top+2, Items[Index]);
+          end;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -179,9 +218,15 @@ begin
       i[0,_] := 0;
       i[1,_] := 0;
       p[_] := 0;
+      re[_]:=0;
   end;
   s1:='';
   s2:='';
+
+  for _ := 0 to 49 do begin
+      g[_]:=0;
+     g2[_]:=0;
+  end;
 
   with sender as TForm1 do begin
        c[0]:=Combobox1;
@@ -197,8 +242,20 @@ begin
        d[1]:=Edit2;
        d[2]:=Edit3;
        d[3]:=Edit4;
-  end;
 
+       m[0]:=Image2;
+       m[1]:=Image3;
+       m[2]:=Image4;
+       m[3]:=Image5;
+
+       m[0].Canvas.Clear;
+       m[1].Canvas.Clear;
+       m[2].Canvas.Clear;
+       m[3].Canvas.Clear;
+
+  end;
+    Image6.Canvas.Clear;
+    Image7.Canvas.Clear;
 end;
 
 procedure TForm1.FormShow(Sender: TObject);
@@ -214,6 +271,118 @@ begin
     for i:=0 to 3 do d[i].font.name:=Font.Name;
     Image1.BringToFront;
 
+end;
+
+procedure TForm1.Image6MouseLeave(Sender: TObject);
+begin
+     hintl.Visible:=false;
+end;
+
+procedure TForm1.Image6MouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+begin
+      hintl.Caption:=c[0].items[(x div 40)*5+(y div 40)+1];
+      hintl.Left:=(sender as TControl).Left + X+20;
+      hintl.Top:=(sender as TControl).Top +Y+1;
+      hintl.Visible:=true;
+end;
+
+procedure TForm1.Image6MouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+var idx, j, n:integer;
+begin
+     idx:= (x div 40)*5+(y div 40);
+     if button = mbLeft then g[idx] := g[idx] + 1;
+     if button = mbRight then g[idx] := g[idx] - 1;
+     if g[idx] <0 then g[idx]:=0;
+
+     UpdateForm();
+
+end;
+
+procedure TForm1.Image6Paint(Sender: TObject);
+var index:integer;
+begin
+     with (sender as TImage) do begin
+     Canvas.Brush.Color:=$00202125;
+     Canvas.Clear;
+     Canvas.Pen.Color:=clCream;
+     Canvas.Font.Color:=clCream;
+     Canvas.Font.Size:=10;
+     for index:=1 to 50 do begin
+         if g[index-1] = 0 then
+            begin
+               if (index<41) then
+                  imagelist1.StretchDraw(canvas, (((index-1) div 5)+1)+50, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+
+               if (index>40) and (index < 46) then
+                  imagelist1.StretchDraw(canvas, (((index-1) div 5)+1+(index-1) mod 5)+50, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+
+               if (index > 45) then
+                  imagelist1.StretchDraw(canvas, (((index-1) div 5)+5)+50, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+            end
+         else begin
+            imagelist1.StretchDraw(canvas, index, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+            canvas.textout(40*(((index-1) div 5))+30, 40*(((index-1) mod 5))+22, inttostr(g[index-1]));
+         end;
+
+         //canvas.textout(40*(((index-1) div 5)), 40*(((index-1) mod 5)),c[0].Items[index-1]);
+     end;
+
+
+     end;
+
+end;
+
+procedure TForm1.Image7Paint(Sender: TObject);
+var index:integer;
+begin
+  image7.Canvas.Brush.Color:=$00202125;
+  Image7.Canvas.Clear;
+  Image7.Canvas.Pen.Color:=clCream;
+  Image7.Canvas.Font.Color:=clCream;
+  for index:=1 to 50 do begin
+      if g2[index-1] = 0 then begin
+            if (index<41) then
+               imagelist1.StretchDraw(image7.canvas, (((index-1) div 5)+1)+50, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+
+            if (index>40) and (index < 46) then
+               imagelist1.StretchDraw(image7.canvas, (((index-1) div 5)+1+(index-1) mod 5)+50, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+
+            if (index > 45) then
+               imagelist1.StretchDraw(image7.canvas, (((index-1) div 5)+5)+50, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+      end
+      else begin
+         imagelist1.StretchDraw(image7.canvas, index, Rect(40*(((index-1) div 5)), 40*(((index-1) mod 5)), 40*(((index-1) div 5))+38, 40*(((index-1) mod 5))+38));
+         image7.canvas.textout(40*(((index-1) div 5))+30, 40*(((index-1) mod 5))+22, inttostr(g2[index-1]));
+      end;
+  end;
+end;
+
+procedure TForm1.Timer1Timer(Sender: TObject);
+begin
+     image6.Invalidate;
+     image7.Invalidate;
+end;
+
+procedure TForm1.UpdateForm();
+var j,n:integer;
+begin//
+  for j:=0 to 49 do g2[j] := g[j];
+//  showmessage('f');
+  for n:=0 to 3 do begin
+      if (c[n].itemindex>0) and (c[n+4].itemindex>0) then begin
+         for j:=0 to 49 do begin
+             if (g[j]>0) and (c[n].itemindex-1 = j) then begin
+                 g2[j]:=g2[j]-1;
+                 if g2[j]<0 then g2[j]:=0;
+                 g2[re[n]]:=g2[re[n]]+1;
+             end;
+         end;
+      end
+  end;
+  Image6.Invalidate;
+  Image7.Invalidate;
 end;
 
 end.
